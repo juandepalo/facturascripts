@@ -66,6 +66,9 @@ abstract class BusinessDocumentController extends PanelController
 
     /**
      * Sets subject for this document.
+     *
+     * @param mixed $view
+     * @param mixed $formData
      */
     abstract protected function setSubject(&$view, $formData);
 
@@ -139,6 +142,8 @@ abstract class BusinessDocumentController extends PanelController
                     $data['custom'][$field] = $value;
                     break;
 
+                case 'dtopor1':
+                case 'dtopor2':
                 case 'idestado':
                     $data['final'][$field] = $value;
                     break;
@@ -257,6 +262,9 @@ abstract class BusinessDocumentController extends PanelController
         /// save
         $result = $this->saveDocumentResult($this->views[$this->active], $data);
         $this->response->setContent($result);
+
+        // Event finish
+        $this->views[$this->active]->model->pipe('finish');
         return false;
     }
 

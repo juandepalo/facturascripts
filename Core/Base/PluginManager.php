@@ -1,7 +1,7 @@
 <?php
 /**
  * This file is part of FacturaScripts
- * Copyright (C) 2017-2019 Carlos Garcia Gomez <carlos@facturascripts.com>
+ * Copyright (C) 2017-2020 Carlos Garcia Gomez <carlos@facturascripts.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -31,7 +31,7 @@ class PluginManager
     /**
      * FacturaScripts core version.
      */
-    const CORE_VERSION = 2018.15;
+    const CORE_VERSION = 2020.2;
 
     /**
      * Path to list plugins on file.
@@ -174,16 +174,17 @@ class PluginManager
     }
 
     /**
-     * Install a new plugin if is compatible.
+     * Installs a new plugin.
      *
      * @param string $zipPath
      * @param string $zipName
+     * @param bool   $force
      *
      * @return bool
      */
-    public function install(string $zipPath, string $zipName = 'plugin.zip'): bool
+    public function install(string $zipPath, string $zipName = 'plugin.zip', bool $force = false): bool
     {
-        if (FS_DISABLE_ADD_PLUGINS) {
+        if (FS_DISABLE_ADD_PLUGINS && !$force) {
             $this->toolBox()->i18nLog()->warning('plugin-installation-disabled');
             return false;
         }

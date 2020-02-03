@@ -63,6 +63,23 @@ class EditProducto extends EditController
         parent::createViews();
         $this->addEditListView('EditVariante', 'Variante', 'variants', 'fas fa-project-diagram');
         $this->addEditListView('EditStock', 'Stock', 'stock', 'fas fa-dolly');
+        $this->createViewsSuppliers();
+    }
+
+    /**
+     * 
+     * @param string $viewName
+     */
+    protected function createViewsSuppliers(string $viewName = 'ListProductoProveedor')
+    {
+        $this->addListView($viewName, 'ProductoProveedor', 'suppliers', 'fas fa-users');
+        $this->views[$viewName]->addOrderBy(['actualizado'], 'update-time', 2);
+        $this->views[$viewName]->addOrderBy(['precio'], 'price');
+        $this->views[$viewName]->addOrderBy(['dtopor'], 'dto');
+        $this->views[$viewName]->addOrderBy(['dtopor2'], 'dto-2');
+
+        /// disable buttons
+        $this->setSettings($viewName, 'btnNew', false);
     }
 
     /**
@@ -82,7 +99,26 @@ class EditProducto extends EditController
         return false;
     }
 
-    protected function loadCustomStockWidget()
+    /**
+     * 
+     * @param string $viewName
+     */
+    protected function loadCustomAttributeWidgets(string $viewName)
+    {
+        $values = $this->codeModel->all('AtributoValor', 'id', '');
+        foreach (['attribute-value-1', 'attribute-value-2'] as $colName) {
+            $column = $this->views[$viewName]->columnForName($colName);
+            if ($column) {
+                $column->widget->setValuesFromCodeModel($values);
+            }
+        }
+    }
+
+    /**
+     * 
+     * @param string $viewName
+     */
+    protected function loadCustomStockWidget(string $viewName)
     {
         $references = [];
         $idproducto = $this->getViewModelValue('EditProducto', 'idproducto');
@@ -91,9 +127,9 @@ class EditProducto extends EditController
             $references[] = ['value' => $code->code, 'title' => $code->description];
         }
 
-        $columnReference = $this->views['EditStock']->columnForName('reference');
-        if ($columnReference) {
-            $columnReference->widget->setValuesFromArray($references, false);
+        $column = $this->views[$viewName]->columnForName('reference');
+        if ($column) {
+            $column->widget->setValuesFromArray($references, false);
         }
     }
 
@@ -114,16 +150,22 @@ class EditProducto extends EditController
                 if ($view->model->nostock) {
                     $this->setSettings('EditStock', 'active', false);
                 } else {
-                    $this->loadCustomStockWidget();
+                    $this->loadCustomStockWidget('EditStock');
                 }
                 break;
 
             case 'EditVariante':
                 $view->loadData('', $where, ['idvariante' => 'DESC']);
+                $this->loadCustomAttributeWidgets($viewName);
                 break;
 
             case 'EditStock':
                 $view->loadData('', $where, ['idstock' => 'DESC']);
+                break;
+
+            case 'ListProductoProveedor':
+                $where2 = [new DataBaseWhere('referencia', $this->getViewModelValue('EditProducto', 'referencia'))];
+                $view->loadData('', $where2);
                 break;
         }
     }

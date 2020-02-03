@@ -1,7 +1,7 @@
 {#
     /**
      * This file is part of FacturaScripts
-     * Copyright (C) 2017-2019 Carlos Garcia Gomez <carlos@facturascripts.com>
+     * Copyright (C) 2017-2020 Carlos Garcia Gomez <carlos@facturascripts.com>
      *
      * This program is free software: you can redistribute it and/or modify
      * it under the terms of the GNU Lesser General Public License as
@@ -94,13 +94,6 @@
                     </div>
                 </div>
             {% endfor %}
-            {% if currentView.model.nick %}
-                <div class="col">
-                    <div class="alert alert-secondary text-center">
-                        <i class="fas fa-user-circle fa-fw" aria-hidden="true"></i> {{ currentView.model.nick }}
-                    </div>
-                </div>
-            {% endif %}
             {% if currentView.model.femail %}
                 <div class="col">
                     <div class="alert alert-info text-center">
@@ -135,11 +128,28 @@
     <div id="document-lines"></div>
     <div class="form-row mt-2">
         {% if fsc.showDocSubType %}
-            {{ _self.customSelect('doc_codsubtipodoc', 'codsubtipodoc', currentView.model.codsubtipodoc, currentView.getSelectValues('BusinessDocSubType')) }}
+            {{ _self.customSelect('doc_codsubtipodoc', 'codsubtipodoc', currentView.model.codsubtipodoc, currentView.getSelectValues('BusinessDocSubType'), true, i18n.trans('doc-subtype')) }}
         {% endif %}
         {% if fsc.showDocOperation %}
-            {{ _self.customSelect('doc_codoperaciondoc', 'codoperaciondoc', currentView.model.codoperaciondoc, currentView.getSelectValues('BusinessDocTypeOperation')) }}
+            {{ _self.customSelect('doc_codoperaciondoc', 'codoperaciondoc', currentView.model.codoperaciondoc, currentView.getSelectValues('BusinessDocTypeOperation'), true, i18n.trans('doc-operation')) }}
         {% endif %}
+        {{ _self.customInput('doc_netosindto', 'netosindto', currentView.model.netosindto, 'text', '', {class: 'form-control', disabled: ''}, i18n.trans('subtotal')) }}
+        {% if currentView.model.editable %}
+            {{ _self.customInput('doc_dtopor1', 'dtopor1', currentView.model.dtopor1, 'number', 'fas fa-percentage', {class: 'form-control'}, i18n.trans('global-dto')) }}
+            {{ _self.customInput('doc_dtopor2', 'dtopor2', currentView.model.dtopor2, 'number', 'fas fa-percentage', {class: 'form-control'}, i18n.trans('global-dto-2')) }}
+        {% else %}
+            {{ _self.customInput('doc_dtopor1', 'dtopor1', currentView.model.dtopor1, 'number', 'fas fa-percentage', {class: 'form-control', disabled: ''}, i18n.trans('global-dto')) }}
+            {{ _self.customInput('doc_dtopor2', 'dtopor2', currentView.model.dtopor2, 'number', 'fas fa-percentage', {class: 'form-control', disabled: ''}, i18n.trans('global-dto-2')) }}
+        {% endif %}
+        {{ _self.customInput('doc_neto', 'neto', currentView.model.neto, 'text', '', {class: 'form-control', disabled: ''}, i18n.trans('net')) }}
+        {{ _self.customInput('doc_totaliva', 'totaliva', currentView.model.totaliva, 'text', '', {class: 'form-control', disabled: ''}, i18n.trans('taxes')) }}
+        {% if currentView.model.totalrecargo != 0 %}
+            {{ _self.customInput('doc_totalrecargo', 'totalrecargo', currentView.model.totalrecargo, 'text', '', {class: 'form-control', disabled: ''}, i18n.trans('re')) }}
+        {% endif %}
+        {% if currentView.model.totalirpf != 0 %}
+            {{ _self.customInput('doc_totalirpf', 'totalirpf', currentView.model.totalirpf, 'text', '', {class: 'form-control', disabled: ''}, i18n.trans('irpf')) }}
+        {% endif %}
+        {{ _self.customInput('doc_total2', 'total', currentView.model.total, 'text', '', {class: 'form-control', disabled: ''}, i18n.trans('total')) }}
     </div>
     <div class="form-row mb-2">
         <div class="col">
@@ -173,13 +183,14 @@
     </div>
 </form>
 
-{% macro customSelect(id, name, value, allValues = {}, allowHide = true) %}
+{% macro customSelect(id, name, value, allValues = {}, allowHide = true, label = '') %}
     {% if allowHide and allValues | length == 1 %}
         {% for key, option in allValues %}
             <input type="hidden" id="{{ id }}" name="{{ name }}" value="{{ key }}"/>
         {% endfor %}
     {% else %}
         <div class="col-sm-3 col-md-2 col-lg mb-2">
+            {{ label }}
             <select id="{{ id }}" name="{{ name }}" class="form-control">
                 {% for key, option in allValues %}
                     <option value="{{ key }}"{% if value == key %} selected=""{% endif %}>
@@ -191,8 +202,9 @@
     {% endif %}
 {% endmacro %}
 
-{% macro customInput(id, name, value, type = "text", icon = NULL, attributes = NULL) %}
+{% macro customInput(id, name, value, type = "text", icon = NULL, attributes = NULL, label = '') %}
     <div class="col-sm-3 col-md-2 col-lg mb-2">
+        {{ label }}
         {% if icon %}
             <div class="input-group">
                 <span class="input-group-prepend">

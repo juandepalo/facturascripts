@@ -1,7 +1,7 @@
 <?php
 /**
  * This file is part of FacturaScripts
- * Copyright (C) 2017-2019 Carlos Garcia Gomez <carlos@facturascripts.com>
+ * Copyright (C) 2017-2020 Carlos Garcia Gomez <carlos@facturascripts.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -54,13 +54,13 @@ class ListAsiento extends ListController
 
     /**
      * Add accounting entries tab
-     * 
+     *
      * @param string $viewName
      */
     protected function createViewAccountEntries($viewName = 'ListAsiento')
     {
         $this->addView($viewName, 'Asiento', 'accounting-entries', 'fas fa-balance-scale');
-        $this->addSearchFields($viewName, ['CAST(numero AS CHAR(10))', 'concepto']);
+        $this->addSearchFields($viewName, ['numero', 'concepto']);
         $this->addOrderBy($viewName, ['fecha', 'idasiento'], 'date', 2);
         $this->addOrderBy($viewName, ['numero', 'idasiento'], 'number');
         $this->addOrderBy($viewName, ['importe', 'idasiento'], 'amount');
@@ -79,7 +79,10 @@ class ListAsiento extends ListController
         $selectJournals = $this->codeModel->all('diarios', 'iddiario', 'descripcion');
         $this->addFilterSelect($viewName, 'iddiario', 'journals', 'iddiario', $selectJournals);
 
-        $this->addFilterNumber($viewName, 'canal', 'channel', 'canal', '=');
+        $selectChannel = $this->codeModel->all('asientos', 'canal', 'canal');
+        $this->addFilterSelect($viewName, 'canal', 'channel', 'canal', $selectChannel);
+        
+        $this->addFilterCheckbox($viewName, 'editable');
 
         /// buttons
         $newButton = [
@@ -93,7 +96,7 @@ class ListAsiento extends ListController
     }
 
     /**
-     * 
+     *
      * @param string $viewName
      */
     protected function createViewConcepts($viewName = 'ListConceptoPartida')
@@ -105,13 +108,13 @@ class ListAsiento extends ListController
     }
 
     /**
-     * 
+     *
      * @param string $viewName
      */
     protected function createViewJournals($viewName = 'ListDiario')
     {
         $this->addView($viewName, 'Diario', 'journals', 'fas fa-book');
-        $this->addSearchFields($viewName, ['iddiario', 'descripcion']);
+        $this->addSearchFields($viewName, ['descripcion']);
         $this->addOrderBy($viewName, ['iddiario'], 'code');
         $this->addOrderBy($viewName, ['descripcion'], 'description');
     }

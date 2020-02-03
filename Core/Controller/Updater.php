@@ -1,7 +1,7 @@
 <?php
 /**
  * This file is part of FacturaScripts
- * Copyright (C) 2018-2019 Carlos Garcia Gomez <carlos@facturascripts.com>
+ * Copyright (C) 2018-2020 Carlos Garcia Gomez <carlos@facturascripts.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -43,7 +43,7 @@ class Updater extends Controller
 
     const CORE_PROJECT_ID = 1;
     const CORE_ZIP_FOLDER = 'facturascripts';
-    const UPDATE_CORE_URL = 'https://www.facturascripts.com/DownloadBuild';
+    const UPDATE_CORE_URL = 'https://facturascripts.com/DownloadBuild';
 
     /**
      *
@@ -121,7 +121,7 @@ class Updater extends Controller
     {
         $idItem = $this->request->get('item', '');
         $fileName = 'update-' . $idItem . '.zip';
-        if (file_exists($fileName)) {
+        if (file_exists(\FS_FOLDER . DIRECTORY_SEPARATOR . $fileName)) {
             unlink(\FS_FOLDER . DIRECTORY_SEPARATOR . $fileName);
             $this->toolBox()->i18nLog()->notice('record-deleted-correctly');
         }
@@ -181,9 +181,9 @@ class Updater extends Controller
                 break;
 
             case 'post-update':
-                $this->toolBox()->cache()->clear();
                 $this->updaterItems = $this->getUpdateItems();
                 $this->initNewModels();
+                $this->pluginManager->deploy(true, true);
                 break;
 
             case 'register':
@@ -197,7 +197,8 @@ class Updater extends Controller
 
             case 'update':
                 if ($this->updateAction()) {
-                    $this->pluginManager->deploy(true, true);
+                    $this->pluginManager->deploy(true, false);
+                    $this->toolBox()->cache()->clear();
                     $this->toolBox()->i18nLog()->notice('reloading');
                     $this->redirect($this->getClassName() . '?action=post-update', 3);
                 }
@@ -411,7 +412,7 @@ class Updater extends Controller
         $zip->close();
 
         /// use plugin manager to update
-        $return = $this->pluginManager->install($fileName);
+        $return = $this->pluginManager->install($fileName, 'plugin.zip', true);
 
         /// remove zip file
         unlink(\FS_FOLDER . DIRECTORY_SEPARATOR . $fileName);

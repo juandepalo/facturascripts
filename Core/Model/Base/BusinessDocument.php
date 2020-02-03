@@ -1,7 +1,7 @@
 <?php
 /**
  * This file is part of FacturaScripts
- * Copyright (C) 2013-2019 Carlos Garcia Gomez <carlos@facturascripts.com>
+ * Copyright (C) 2013-2020 Carlos Garcia Gomez <carlos@facturascripts.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -18,14 +18,11 @@
  */
 namespace FacturaScripts\Core\Model\Base;
 
-use FacturaScripts\Core\Base\DataBase\DataBaseWhere;
 use FacturaScripts\Dinamic\Lib\BusinessDocumentCode;
 use FacturaScripts\Dinamic\Model\Almacen;
 use FacturaScripts\Dinamic\Model\Ejercicio;
 use FacturaScripts\Dinamic\Model\Empresa;
 use FacturaScripts\Dinamic\Model\Serie;
-use FacturaScripts\Dinamic\Model\Tarifa;
-use FacturaScripts\Dinamic\Model\Variante;
 
 /**
  * Description of BusinessDocument
@@ -85,6 +82,20 @@ abstract class BusinessDocument extends ModelOnChangeClass
     public $codserie;
 
     /**
+     * Percentage of discount.
+     *
+     * @var float
+     */
+    public $dtopor1;
+
+    /**
+     * Percentage of discount.
+     *
+     * @var float
+     */
+    public $dtopor2;
+
+    /**
      * Date of the document.
      *
      * @var string
@@ -127,6 +138,13 @@ abstract class BusinessDocument extends ModelOnChangeClass
     public $neto;
 
     /**
+     * Sum of the pvptotal of lines. Total of the document before taxes and global discounts.
+     *
+     * @var float|int
+     */
+    public $netosindto;
+
+    /**
      * User who created this document. User model.
      *
      * @var string
@@ -146,12 +164,6 @@ abstract class BusinessDocument extends ModelOnChangeClass
      * @var string
      */
     public $observaciones;
-
-    /**
-     *
-     * @var Tarifa
-     */
-    protected $tarifa;
 
     /**
      * Rate of conversion to Euros of the selected currency.
@@ -208,6 +220,11 @@ abstract class BusinessDocument extends ModelOnChangeClass
     abstract public function getNewLine(array $data = [], array $exclude = []);
 
     /**
+     * Returns a new line for this business document completed with the product data.
+     */
+    abstract public function getNewProductLine($reference);
+
+    /**
      * Returns the subject of this document.
      */
     abstract public function getSubject();
@@ -243,11 +260,14 @@ abstract class BusinessDocument extends ModelOnChangeClass
         $this->codalmacen = $appSettings->get('default', 'codalmacen');
         $this->codpago = $appSettings->get('default', 'codpago');
         $this->codserie = $appSettings->get('default', 'codserie');
+        $this->dtopor1 = 0.0;
+        $this->dtopor2 = 0.0;
         $this->fecha = date(self::DATE_STYLE);
         $this->hora = date(self::HOUR_STYLE);
         $this->idempresa = $appSettings->get('default', 'idempresa');
         $this->irpf = 0.0;
         $this->neto = 0.0;
+        $this->netosindto = 0.0;
         $this->total = 0.0;
         $this->totaleuros = 0.0;
         $this->totalirpf = 0.0;
@@ -264,38 +284,6 @@ abstract class BusinessDocument extends ModelOnChangeClass
         $empresa = new Empresa();
         $empresa->loadFromCode($this->idempresa);
         return $empresa;
-    }
-
-    /**
-     *
-     * @param string $reference
-     *
-     * @return BusinessDocumentLine
-     */
-    public function getNewProductLine($reference)
-    {
-        $newLine = $this->getNewLine();
-
-        $variant = new Variante();
-        $where = [new DataBaseWhere('referencia', $this->toolBox()->utils()->noHtml($reference))];
-        if ($variant->loadFromCode('', $where)) {
-            $product = $variant->getProducto();
-            $impuesto = $product->getImpuesto();
-
-            $newLine->cantidad = 1;
-            $newLine->codimpuesto = $impuesto->codimpuesto;
-            $newLine->descripcion = $variant->description();
-            $newLine->idproducto = $product->idproducto;
-            $newLine->iva = $impuesto->iva;
-            $newLine->pvpunitario = isset($this->tarifa) ? $this->tarifa->apply($variant->coste, $variant->precio) : $variant->precio;
-            $newLine->recargo = $impuesto->recargo;
-            $newLine->referencia = $variant->referencia;
-
-            /// allow extensions
-            $this->pipe('getNewProductLine', $newLine, $variant, $product);
-        }
-
-        return $newLine;
     }
 
     /**
@@ -401,18 +389,18 @@ abstract class BusinessDocument extends ModelOnChangeClass
         $utils = $this->toolBox()->utils();
         $this->observaciones = $utils->noHtml($this->observaciones);
 
+        /// check total
+        if (!$utils->floatcmp($this->total, $this->neto + $this->totaliva - $this->totalirpf + $this->totalrecargo, FS_NF0, true)) {
+            $this->toolBox()->i18nLog()->error('bad-total-error');
+            return false;
+        }
+
         /**
          * We use the euro as a bridge currency when adding, compare
          * or convert amounts in several currencies. For this reason we need
          * many decimals.
          */
         $this->totaleuros = empty($this->tasaconv) ? 0 : round($this->total / $this->tasaconv, 5);
-
-        /// check total
-        if (!$utils->floatcmp($this->total, $this->neto + $this->totaliva - $this->totalirpf + $this->totalrecargo, FS_NF0, true)) {
-            $this->toolBox()->i18nLog()->error('bad-total-error');
-            return false;
-        }
 
         return parent::test();
     }

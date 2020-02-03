@@ -27,6 +27,10 @@
         <null>NO</null>
     </column>
     <column>
+        <name>inicio</name>
+        <type>integer</type>
+    </column>
+    <column>
         <name>longnumero</name>
         <type>integer</type>
         <null>NO</null>
@@ -45,6 +49,12 @@
         <name>tipodoc</name>
         <type>character varying(30)</type>
         <null>NO</null>
+    </column>
+    <column>
+        <name>usarhuecos</name>
+        <type>boolean</type>
+        <null>NO</null>
+        <default>false</default>
     </column>
     <constraint>
         <name>secuencias_documentos_pkey</name>

@@ -1,7 +1,7 @@
 <?php
 /**
  * This file is part of FacturaScripts
- * Copyright (C) 2017-2019 Carlos Garcia Gomez <carlos@facturascripts.com>
+ * Copyright (C) 2017-2020 Carlos Garcia Gomez <carlos@facturascripts.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -105,7 +105,8 @@ abstract class BaseController extends Base\Controller
      */
     public function addButton($viewName, $btnArray)
     {
-        $row = $this->views[$viewName]->getRow('actions');
+        $rowType = isset($btnArray['row']) ? 'footer' : 'actions';
+        $row = $this->views[$viewName]->getRow($rowType);
         if ($row) {
             $row->addButton($btnArray);
         }
@@ -265,17 +266,23 @@ abstract class BaseController extends Base\Controller
             $this->toolBox()->i18nLog()->warning('no-selected-item');
             return false;
         } elseif (is_array($codes)) {
+            $this->dataBase->beginTransaction();
+
             // deleting multiples rows
             $numDeletes = 0;
             foreach ($codes as $cod) {
                 if ($model->loadFromCode($cod) && $model->delete()) {
                     ++$numDeletes;
-                } else {
-                    break;
+                    continue;
                 }
+
+                /// error?
+                $this->dataBase->rollback();
+                break;
             }
 
             $model->clear();
+            $this->dataBase->commit();
             if ($numDeletes > 0) {
                 $this->toolBox()->i18nLog()->notice('record-deleted-correctly');
                 return true;

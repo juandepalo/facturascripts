@@ -1,7 +1,7 @@
 <?php
 /**
  * This file is part of FacturaScripts
- * Copyright (C) 2019 Carlos Garcia Gomez <carlos@facturascripts.com>
+ * Copyright (C) 2019-2020 Carlos Garcia Gomez <carlos@facturascripts.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -34,6 +34,12 @@ abstract class Payment extends ModelClass
      * @var string
      */
     public $codpago;
+
+    /**
+     *
+     * @var bool
+     */
+    protected $disableAccountingGeneration = false;
 
     /**
      *
@@ -89,6 +95,31 @@ abstract class Payment extends ModelClass
 
     /**
      * 
+     * @return bool
+     */
+    public function delete()
+    {
+        /// remove accounting
+        $acEntry = $this->getAccountingEntry();
+        if ($acEntry->exists() && !$acEntry->delete()) {
+            $this->toolBox()->i18nLog()->warning('cant-remove-accounting-entry');
+            return false;
+        }
+
+        return parent::delete();
+    }
+
+    /**
+     * 
+     * @param bool $value
+     */
+    public function disableAccountingGeneration(bool $value = true)
+    {
+        $this->disableAccountingGeneration = $value;
+    }
+
+    /**
+     * 
      * @return Asiento
      */
     public function getAccountingEntry()
@@ -126,7 +157,7 @@ abstract class Payment extends ModelClass
     public function test()
     {
         if (parent::test()) {
-            if (empty($this->idasiento)) {
+            if (empty($this->idasiento) && !$this->disableAccountingGeneration) {
                 $tool = new PaymentToAccounting();
                 $tool->generate($this);
             }

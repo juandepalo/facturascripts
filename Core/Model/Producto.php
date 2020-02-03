@@ -96,6 +96,13 @@ class Producto extends Base\ModelClass
     public $descripcion;
 
     /**
+     * Date on which the product was registered.
+     *
+     * @var string
+     */
+    public $fechaalta;
+
+    /**
      * Primary key.
      *
      * @var int
@@ -181,6 +188,7 @@ class Producto extends Base\ModelClass
         $this->actualizado = date(self::DATETIME_STYLE);
         $this->bloqueado = false;
         $this->codimpuesto = $this->toolBox()->appSettings()->get('default', 'codimpuesto');
+        $this->fechaalta = date(self::DATE_STYLE);
         $this->nostock = false;
         $this->precio = 0.0;
         $this->publico = false;
@@ -367,6 +375,7 @@ class Producto extends Base\ModelClass
             $variant->idproducto = $this->idproducto;
             $variant->precio = $this->precio;
             $variant->referencia = $this->referencia;
+            $variant->stockfis = $this->stockfis;
             if ($variant->save()) {
                 return true;
             }
