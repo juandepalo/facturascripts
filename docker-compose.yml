@@ -1,0 +1,31 @@
+version: "3"
+
+services:
+  db:
+    image: mysql:latest
+    container_name: mysqldocker
+    hostname: db
+    environment:
+      MYSQL_ROOT_PASSWORD: provisional
+      MYSQL_DATABASE: facturascripts
+    ports:
+      - "3306:3306"
+    networks:
+      - facturascripts
+
+  app:
+    image: facturascripts
+    container_name: facturascripts
+    hostname: facturascripts
+    build:
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - "21290:80"
+      - "44390:443"
+    networks:
+      - facturascripts
+    depends_on:
+      - db
+networks:
+  facturascripts:
